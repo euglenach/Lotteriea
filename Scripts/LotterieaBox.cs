@@ -31,12 +31,10 @@ namespace LotterySystem
 
         public bool True(float trueProbability, RandomType randomType = RandomType.Ratio)
         {
-            if(trueProbability <= 0) return false;
-
             return randomType switch
             {
-                RandomType.Ratio => random.NextFloat() <= trueProbability,
-                RandomType.Percent => random.NextFloat(0f, 100f) <= trueProbability,
+                RandomType.Ratio => random.NextFloat() < ClampProbability(trueProbability, 1f),
+                RandomType.Percent => random.NextFloat(0f, 100f) < ClampProbability(trueProbability, 100f),
                 _ => throw new ArgumentOutOfRangeException(nameof(randomType), randomType, null)
             };
         }
@@ -44,6 +42,13 @@ namespace LotterySystem
         public bool False(float falseProbability, RandomType randomType = RandomType.Ratio)
         {
             return !True(falseProbability, randomType);
+        }
+
+        private float ClampProbability(float probability, float max)
+        {
+            if(float.IsNaN(probability) || probability <= 0f) return 0f;
+            if(probability >= max) return max;
+            return probability;
         }
 
         #region Select
