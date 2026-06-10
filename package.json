@@ -1,6 +1,6 @@
 {
   "name": "com.euglenach.lotteriea",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "displayName": "Lotteriea",
   "description": "simple lottery system for C#",
   "dependencies": {
