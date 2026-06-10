@@ -1,29 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using Random = UnityEngine.Random;
 
 namespace LotterySystem
 {
-    /// <summary>
-    /// 抽選系
-    /// </summary>
     public static class Lotteriea
     {
-        private static LotterieaBox core = new((uint)Random.Range(0, 0x6E624EB7u + 1));
-        
+        private static LotterieaBox core;
+
+        static Lotteriea()
+        {
+            var ticks = DateTime.UtcNow.Ticks;
+            var seed = (uint)((ticks >> 32) ^ ticks);
+            if (seed == 0) seed = 1;
+            core = new(seed);
+        }
+
         public static void InitState(uint seed = 0x6E624EB7u)
         {
             core.InitState(seed);
         }
 
-        public static bool True(float trueProbability, RandomType randomType = RandomType.Ratio) =>
-            core.True(trueProbability, randomType);
+        public static bool True(float trueProbability, RandomType randomType = RandomType.Ratio) => core.True(trueProbability, randomType);
 
-        public static bool False(float falseProbability, RandomType randomType = RandomType.Ratio) =>
-            core.False(falseProbability, randomType);
+        public static bool False(float falseProbability, RandomType randomType = RandomType.Ratio) => core.False(falseProbability, randomType);
+        
+        public static T Select<T>(IEnumerable<T> source) => core.Select(source);
 
         public static T Select<T>(params T[] source) => core.Select(source);
+        
+        public static T Select<T>(ReadOnlySpan<T> source) => core.Select(source);
+        public static T Select<T>(IReadOnlyList<T> source) => core.Select(source);
 
         public static T Select<T>(T item1, T item2) => core.Select(item1, item2);
 
@@ -31,25 +37,32 @@ namespace LotterySystem
 
         public static ref T Select<T>(ref T item1, ref T item2) => ref core.Select(ref item1, ref item2);
 
-        public static int GetRandomIndex(params int[] weightTable) => core.GetRandomIndex(weightTable);
+        public static int WeightLotteryIndex(params int[] weightTable) => core.WeightLotteryIndex(weightTable);
         
-        public static int GetRandomIndex(ReadOnlySpan<int> weightTable) => core.GetRandomIndex(weightTable);
+        public static int WeightLotteryIndex(ReadOnlySpan<int> weightTable) => core.WeightLotteryIndex(weightTable);
 
-        public static int GetRandomIndex(params IWeight[] weightTable) => core.GetRandomIndex(weightTable);
+        public static int WeightLotteryIndex(params IWeight[] weightTable) => core.WeightLotteryIndex(weightTable);
         
-        public static int GetRandomIndex<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => core.GetRandomIndex(weightTable);
+        public static int WeightLotteryIndex<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => core.WeightLotteryIndex(weightTable);
         
-        public static int GetRandomIndex(ReadOnlySpan<IWeight> weightTable) => core.GetRandomIndex(weightTable);
-        public static int GetRandomIndex<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight => core.GetRandomIndex(weightTable);
+        public static int WeightLotteryIndex(ReadOnlySpan<IWeight> weightTable) => core.WeightLotteryIndex(weightTable);
+        public static int WeightLotteryIndex<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight => core.WeightLotteryIndex(weightTable);
         
-        public static IWeight WeightRandom(params IWeight[] weightTable) => core.WeightRandom(weightTable);
+        public static IWeight WeightLottery(params IWeight[] weightTable) => core.WeightLottery(weightTable);
         
-        public static TWeight WeightRandom<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => core.WeightRandom(weightTable);
+        public static TWeight WeightLottery<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => core.WeightLottery(weightTable);
         
-        public static TWeight WeightRandom<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight => core.WeightRandom(weightTable);
+        public static IWeight WeightLottery(ReadOnlySpan<IWeight> weightTable) => core.WeightLottery(weightTable);
         
-        public static ref IWeight WeightRandomRef(params IWeight[] weightTable) => ref core.WeightRandomRef(weightTable);
+        public static TWeight WeightLottery<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight => core.WeightLottery(weightTable);
         
-        public static ref TWeight WeightRandomRef<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => ref core.WeightRandomRef(weightTable);
+        public static ref IWeight WeightLotteryRef(params IWeight[] weightTable) => ref core.WeightLotteryRef(weightTable);
+        
+        public static ref TWeight WeightLotteryRef<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => ref core.WeightLotteryRef(weightTable);
+        
+        public static Span<T> Shuffle<T>(Span<T> source) => core.Shuffle(source);
+        public static T[] Shuffle<T>(params T[] source) => core.Shuffle(source);
+        public static List<T> Shuffle<T>(List<T> source) => core.Shuffle(source);
+        public static IList<T> Shuffle<T>(IList<T> source) => core.Shuffle(source);
     }
 }

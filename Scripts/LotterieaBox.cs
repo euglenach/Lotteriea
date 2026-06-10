@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Random = Unity.Mathematics.Random;
 
 namespace LotterySystem
@@ -29,7 +31,7 @@ namespace LotterySystem
 
         public bool True(float trueProbability, RandomType randomType = RandomType.Ratio)
         {
-            if(trueProbability <= 0) { return false;}
+            if(trueProbability <= 0) return false;
 
             return randomType switch
             {
@@ -44,6 +46,31 @@ namespace LotterySystem
             return !True(falseProbability, randomType);
         }
 
+        #region Select
+        
+        public T Select<T>(IEnumerable<T> source)
+        {
+            if(InternalUtility.TryAsSpan(source, out var span)) return Select((ReadOnlySpan<T>)span);
+            if(source is IReadOnlyList<T> readOnlyList) return Select(readOnlyList);
+            
+            var buffer = source.ToArray();
+            return Select(buffer);
+        }
+        
+        public T Select<T>(ReadOnlySpan<T> source)
+        {
+            var count = source.Length;
+            var index = random.NextInt(0, count);
+            return source[index];
+        }
+        
+        public T Select<T>(IReadOnlyList<T> source)
+        {
+            var count = source.Count;
+            var index = random.NextInt(0, count);
+            return source[index];
+        }
+
         public T Select<T>(params T[] source)
         {
             var count = source.Length;
@@ -53,7 +80,7 @@ namespace LotterySystem
         
         public T Select<T>(T item1, T item2)
         {
-            return True(0.5f)? item1 : item2;
+            return random.NextBool()? item1 : item2;
         }
         
         public ref T Select<T>(ref T[] source)
@@ -65,14 +92,16 @@ namespace LotterySystem
 
         public ref T Select<T>(ref T item1, ref T item2)
         {
-            return ref True(0.5f)? ref item1 : ref item2;
+            return ref random.NextBool()? ref item1 : ref item2;
         }
 
-        #region GetRandomIndex
+        #endregion
         
-        public int GetRandomIndex(params int[] weightTable) => GetRandomIndex((ReadOnlySpan<int>)weightTable);
+        #region WeightLotteryIndex
         
-        public int GetRandomIndex(ReadOnlySpan<int> weightTable)
+        public int WeightLotteryIndex(params int[] weightTable) => WeightLotteryIndex((ReadOnlySpan<int>)weightTable);
+        
+        public int WeightLotteryIndex(ReadOnlySpan<int> weightTable)
         {
             var totalWeight = SumWeight(weightTable);
             var value = random.NextInt(1, totalWeight + 1);
@@ -89,11 +118,11 @@ namespace LotterySystem
             return retIndex;
         }
         
-        public int GetRandomIndex(params IWeight[] weightTable) => GetRandomIndex((ReadOnlySpan<IWeight>)weightTable);
+        public int WeightLotteryIndex(params IWeight[] weightTable) => WeightLotteryIndex((ReadOnlySpan<IWeight>)weightTable);
         
-        public int GetRandomIndex<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => GetRandomIndex((ReadOnlySpan<TWeight>)weightTable);
+        public int WeightLotteryIndex<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => WeightLotteryIndex((ReadOnlySpan<TWeight>)weightTable);
         
-        public int GetRandomIndex(ReadOnlySpan<IWeight> weightTable)
+        public int WeightLotteryIndex(ReadOnlySpan<IWeight> weightTable)
         {
             var totalWeight = SumWeight(weightTable);
             var value = random.NextInt(1, totalWeight + 1);
@@ -110,7 +139,7 @@ namespace LotterySystem
             return retIndex;
         }
         
-        public int GetRandomIndex<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight
+        public int WeightLotteryIndex<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight
         {
             var totalWeight = SumWeight(weightTable);
             var value = random.NextInt(1, totalWeight + 1);
@@ -127,39 +156,90 @@ namespace LotterySystem
             return retIndex;
         }
         
-        #endregion GetRandomIndex
+        #endregion LotteryIndex
 
-        #region WeightRandom
+        #region WeightLottery
         
-        public IWeight WeightRandom(params IWeight[] weightTable) => WeightRandom((ReadOnlySpan<IWeight>)weightTable);
-        public TWeight WeightRandom<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => WeightRandom((ReadOnlySpan<TWeight>)weightTable);
+        public IWeight WeightLottery(params IWeight[] weightTable) => WeightLottery((ReadOnlySpan<IWeight>)weightTable);
+        public TWeight WeightLottery<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => WeightLottery((ReadOnlySpan<TWeight>)weightTable);
 
-        public IWeight WeightRandom(ReadOnlySpan<IWeight> weightTable)
+        public IWeight WeightLottery(ReadOnlySpan<IWeight> weightTable)
         {
-            var index = GetRandomIndex(weightTable);
+            var index = WeightLotteryIndex(weightTable);
             return weightTable[index];
         }
         
-        public TWeight WeightRandom<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight
+        public TWeight WeightLottery<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight
         {
-            var index = GetRandomIndex(weightTable);
+            var index = WeightLotteryIndex(weightTable);
             return weightTable[index];
         }
         
-        public ref IWeight WeightRandomRef(params IWeight[] weightTable)
+        public ref IWeight WeightLotteryRef(params IWeight[] weightTable)
         {
-            var index = GetRandomIndex(weightTable);
+            var index = WeightLotteryIndex(weightTable);
             return ref weightTable[index];
         }
         
-        public ref TWeight WeightRandomRef<TWeight>(params TWeight[] weightTable) where TWeight : IWeight
+        public ref TWeight WeightLotteryRef<TWeight>(params TWeight[] weightTable) where TWeight : IWeight
         {
-            var index = GetRandomIndex(weightTable);
+            var index = WeightLotteryIndex(weightTable);
             return ref weightTable[index];
         }
+        
+        #endregion WeightLottery
+
+        #region Shuffle
+
+        public Span<T> Shuffle<T>(Span<T> source)
+        {
+            var count = source.Length;
+            for (var i = 0; i < count; ++i)
+            {
+                var index = random.NextInt(0, count);
+                (source[i], source[index]) = (source[index], source[i]);
+            }
+            return source;
+        }
+        
+        public T[] Shuffle<T>(params T[] source)
+        {
+            var count = source.Length;
+            for (var i = 0; i < count; ++i)
+            {
+                var index = random.NextInt(0, count);
+                (source[i], source[index]) = (source[index], source[i]);
+            }
+            return source;
+        }
+        
+        public List<T> Shuffle<T>(List<T> source)
+        {
+            var count = source.Count;
+            for (var i = 0; i < count; ++i)
+            {
+                var index = random.NextInt(0, count);
+                (source[i], source[index]) = (source[index], source[i]);
+            }
+            return source;
+        }
+        
+        public IList<T> Shuffle<T>(IList<T> source)
+        {
+            var count = source.Count;
+            for (var i = 0; i < count; ++i)
+            {
+                var index = random.NextInt(0, count);
+                (source[i], source[index]) = (source[index], source[i]);
+            }
+            return source;
+        }
+
         #endregion
 
-        int SumWeight(ReadOnlySpan<IWeight> table)
+        #region SumWeight
+
+        private int SumWeight(ReadOnlySpan<IWeight> table)
         {
             var sum = 0;
             foreach(var weight in table)
@@ -170,7 +250,7 @@ namespace LotterySystem
             return sum;
         }
         
-        int SumWeight<TWeight>(ReadOnlySpan<TWeight> table) where TWeight : IWeight
+        private int SumWeight<TWeight>(ReadOnlySpan<TWeight> table) where TWeight : IWeight
         {
             var sum = 0;
             foreach(var weight in table)
@@ -181,7 +261,7 @@ namespace LotterySystem
             return sum;
         }
         
-        int SumWeight(ReadOnlySpan<int> table)
+        private int SumWeight(ReadOnlySpan<int> table)
         {
             var sum = 0;
             foreach(var weight in table)
@@ -191,5 +271,7 @@ namespace LotterySystem
 
             return sum;
         }
+        
+        #endregion
     }
 }
