@@ -104,18 +104,16 @@ namespace LotterySystem
         public int WeightLotteryIndex(ReadOnlySpan<int> weightTable)
         {
             var totalWeight = SumWeight(weightTable);
-            var value = random.NextInt(1, totalWeight + 1);
-            var retIndex = -1;
+            var value = random.NextInt(0, totalWeight);
             for (var i = 0; i < weightTable.Length; ++i)
             {
-                if (weightTable[i] >= value)
+                if (weightTable[i] > value)
                 {
-                    retIndex = i;
-                    break;
+                    return i;
                 }
                 value -= weightTable[i];
             }
-            return retIndex;
+            throw new InvalidOperationException("Failed to select a weighted index.");
         }
         
         public int WeightLotteryIndex(params IWeight[] weightTable) => WeightLotteryIndex((ReadOnlySpan<IWeight>)weightTable);
@@ -125,35 +123,33 @@ namespace LotterySystem
         public int WeightLotteryIndex(ReadOnlySpan<IWeight> weightTable)
         {
             var totalWeight = SumWeight(weightTable);
-            var value = random.NextInt(1, totalWeight + 1);
-            var retIndex = -1;
+            var value = random.NextInt(0, totalWeight);
             for (var i = 0; i < weightTable.Length; ++i)
             {
-                if (weightTable[i].Weight >= value)
+                var weight = weightTable[i].Weight;
+                if (weight > value)
                 {
-                    retIndex = i;
-                    break;
+                    return i;
                 }
-                value -= weightTable[i].Weight;
+                value -= weight;
             }
-            return retIndex;
+            throw new InvalidOperationException("Failed to select a weighted index.");
         }
         
         public int WeightLotteryIndex<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight
         {
             var totalWeight = SumWeight(weightTable);
-            var value = random.NextInt(1, totalWeight + 1);
-            var retIndex = -1;
+            var value = random.NextInt(0, totalWeight);
             for (var i = 0; i < weightTable.Length; ++i)
             {
-                if (weightTable[i].Weight >= value)
+                var weight = weightTable[i].Weight;
+                if (weight > value)
                 {
-                    retIndex = i;
-                    break;
+                    return i;
                 }
-                value -= weightTable[i].Weight;
+                value -= weight;
             }
-            return retIndex;
+            throw new InvalidOperationException("Failed to select a weighted index.");
         }
         
         #endregion LotteryIndex
@@ -196,7 +192,7 @@ namespace LotterySystem
             var count = source.Length;
             for (var i = 0; i < count; ++i)
             {
-                var index = random.NextInt(0, count);
+                var index = random.NextInt(i, count);
                 (source[i], source[index]) = (source[index], source[i]);
             }
             return source;
@@ -207,7 +203,7 @@ namespace LotterySystem
             var count = source.Length;
             for (var i = 0; i < count; ++i)
             {
-                var index = random.NextInt(0, count);
+                var index = random.NextInt(i, count);
                 (source[i], source[index]) = (source[index], source[i]);
             }
             return source;
@@ -218,7 +214,7 @@ namespace LotterySystem
             var count = source.Count;
             for (var i = 0; i < count; ++i)
             {
-                var index = random.NextInt(0, count);
+                var index = random.NextInt(i, count);
                 (source[i], source[index]) = (source[index], source[i]);
             }
             return source;
@@ -229,7 +225,7 @@ namespace LotterySystem
             var count = source.Count;
             for (var i = 0; i < count; ++i)
             {
-                var index = random.NextInt(0, count);
+                var index = random.NextInt(i, count);
                 (source[i], source[index]) = (source[index], source[i]);
             }
             return source;
@@ -239,37 +235,58 @@ namespace LotterySystem
 
         #region SumWeight
 
-        private int SumWeight(ReadOnlySpan<IWeight> table)
+        private int SumWeight(ReadOnlySpan<IWeight> weightTable)
         {
-            var sum = 0;
-            foreach(var weight in table)
+            if(weightTable.Length == 0) throw new ArgumentException("Weight table must contain at least one element.", nameof(weightTable));
+
+            long sum = 0;
+            foreach(var item in weightTable)
             {
-                sum += weight.Weight;
+                if(item == null) throw new ArgumentException("Weight table must not contain null elements.", nameof(weightTable));
+                sum += ValidateWeight(item.Weight, nameof(weightTable));
             }
 
-            return sum;
+            return ValidateTotalWeight(sum, nameof(weightTable));
         }
         
-        private int SumWeight<TWeight>(ReadOnlySpan<TWeight> table) where TWeight : IWeight
+        private int SumWeight<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight
         {
-            var sum = 0;
-            foreach(var weight in table)
+            if(weightTable.Length == 0) throw new ArgumentException("Weight table must contain at least one element.", nameof(weightTable));
+
+            long sum = 0;
+            foreach(var item in weightTable)
             {
-                sum += weight.Weight;
+                if(item is null) throw new ArgumentException("Weight table must not contain null elements.", nameof(weightTable));
+                sum += ValidateWeight(item.Weight, nameof(weightTable));
             }
 
-            return sum;
+            return ValidateTotalWeight(sum, nameof(weightTable));
         }
         
-        private int SumWeight(ReadOnlySpan<int> table)
+        private int SumWeight(ReadOnlySpan<int> weightTable)
         {
-            var sum = 0;
-            foreach(var weight in table)
+            if(weightTable.Length == 0) throw new ArgumentException("Weight table must contain at least one element.", nameof(weightTable));
+
+            long sum = 0;
+            foreach(var weight in weightTable)
             {
-                sum += weight;
+                sum += ValidateWeight(weight, nameof(weightTable));
             }
 
-            return sum;
+            return ValidateTotalWeight(sum, nameof(weightTable));
+        }
+
+        private int ValidateWeight(int weight, string paramName)
+        {
+            if(weight < 0) throw new ArgumentOutOfRangeException(paramName, weight, "Weight values must be zero or greater.");
+            return weight;
+        }
+
+        private int ValidateTotalWeight(long totalWeight, string paramName)
+        {
+            if(totalWeight == 0) throw new ArgumentException("At least one weight must be greater than zero.", paramName);
+            if(totalWeight > int.MaxValue) throw new ArgumentOutOfRangeException(paramName, totalWeight, "Total weight must be less than or equal to int.MaxValue.");
+            return (int)totalWeight;
         }
         
         #endregion
