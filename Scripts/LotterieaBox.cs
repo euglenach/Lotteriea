@@ -176,13 +176,13 @@ namespace LotterySystem
             return weightTable[index];
         }
         
-        public ref IWeight WeightLotteryRef(params IWeight[] weightTable)
+        public ref IWeight WeightLotteryRef(IWeight[] weightTable)
         {
             var index = WeightLotteryIndex(weightTable);
             return ref weightTable[index];
         }
         
-        public ref TWeight WeightLotteryRef<TWeight>(params TWeight[] weightTable) where TWeight : IWeight
+        public ref TWeight WeightLotteryRef<TWeight>(TWeight[] weightTable) where TWeight : IWeight
         {
             var index = WeightLotteryIndex(weightTable);
             return ref weightTable[index];

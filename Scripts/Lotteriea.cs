@@ -56,9 +56,9 @@ namespace LotterySystem
         
         public static TWeight WeightLottery<TWeight>(ReadOnlySpan<TWeight> weightTable) where TWeight : IWeight => core.WeightLottery(weightTable);
         
-        public static ref IWeight WeightLotteryRef(params IWeight[] weightTable) => ref core.WeightLotteryRef(weightTable);
+        public static ref IWeight WeightLotteryRef(IWeight[] weightTable) => ref core.WeightLotteryRef(weightTable);
         
-        public static ref TWeight WeightLotteryRef<TWeight>(params TWeight[] weightTable) where TWeight : IWeight => ref core.WeightLotteryRef(weightTable);
+        public static ref TWeight WeightLotteryRef<TWeight>(TWeight[] weightTable) where TWeight : IWeight => ref core.WeightLotteryRef(weightTable);
         
         public static Span<T> Shuffle<T>(Span<T> source) => core.Shuffle(source);
         public static T[] Shuffle<T>(params T[] source) => core.Shuffle(source);
