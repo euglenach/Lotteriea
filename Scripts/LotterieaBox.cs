@@ -11,7 +11,7 @@ namespace LotterySystem
         
         public LotterieaBox(uint seed)
         {
-            random = new Random(seed);
+            random = new Random(NormalizeSeed(seed));
         }
 
         public LotterieaBox(Random random)
@@ -26,7 +26,7 @@ namespace LotterySystem
 
         public void InitState(uint seed = 0x6E624EB7u)
         {
-            random.InitState(seed);
+            random.InitState(NormalizeSeed(seed));
         }
 
         public bool True(float trueProbability, RandomType randomType = RandomType.Ratio)
@@ -51,10 +51,16 @@ namespace LotterySystem
             return probability;
         }
 
+        private static uint NormalizeSeed(uint seed)
+        {
+            return seed == 0 ? 1u : seed;
+        }
+
         #region Select
         
         public T Select<T>(IEnumerable<T> source)
         {
+            if(source == null) throw new ArgumentNullException(nameof(source));
             if(InternalUtility.TryAsSpan(source, out var span)) return Select((ReadOnlySpan<T>)span);
             if(source is IReadOnlyList<T> readOnlyList) return Select(readOnlyList);
             
@@ -65,21 +71,23 @@ namespace LotterySystem
         public T Select<T>(ReadOnlySpan<T> source)
         {
             var count = source.Length;
-            var index = random.NextInt(0, count);
+            var index = SelectIndex(count, nameof(source));
             return source[index];
         }
         
         public T Select<T>(IReadOnlyList<T> source)
         {
+            if(source == null) throw new ArgumentNullException(nameof(source));
             var count = source.Count;
-            var index = random.NextInt(0, count);
+            var index = SelectIndex(count, nameof(source));
             return source[index];
         }
 
         public T Select<T>(params T[] source)
         {
+            if(source == null) throw new ArgumentNullException(nameof(source));
             var count = source.Length;
-            var index = random.NextInt(0, count);
+            var index = SelectIndex(count, nameof(source));
             return source[index];
         }
         
@@ -90,9 +98,16 @@ namespace LotterySystem
         
         public ref T Select<T>(ref T[] source)
         {
+            if(source == null) throw new ArgumentNullException(nameof(source));
             var count = source.Length;
-            var index = random.NextInt(0, count);
+            var index = SelectIndex(count, nameof(source));
             return ref source[index];
+        }
+
+        private int SelectIndex(int count, string paramName)
+        {
+            if(count == 0) throw new ArgumentException("Source must contain at least one element.", paramName);
+            return random.NextInt(0, count);
         }
 
         public ref T Select<T>(ref T item1, ref T item2)
